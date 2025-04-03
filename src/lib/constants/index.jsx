@@ -3,8 +3,10 @@ import {
   HiOutlineDocumentText,
   HiOutlineCog,
   HiOutlineLogout,
+  HiOutlineExclamationCircle 
 } from "react-icons/hi";
 import { RiFolderHistoryFill } from "react-icons/ri";
+import { AiOutlineIssuesClose } from "react-icons/ai";
 
 import { FaParking } from "react-icons/fa";
 
@@ -46,6 +48,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     label: "Transactions",
     path: "/dashboard/transactions",
     icon: <HiOutlineDocumentText />,
+  },
+  {
+    key: "report-issues",
+    label: "Report Issues",
+    path: "/dashboard/report-issues",
+    icon: <HiOutlineExclamationCircle  />,
   },
   {
     key: "settings",

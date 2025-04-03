@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaTrash, FaEdit, FaPlus } from "react-icons/fa";
@@ -15,23 +16,23 @@ const MangeSlots = () => {
   const [editedOccupiedStatus, setEditedOccupiedStatus] = useState(false);
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  useEffect(() => {
-    const fetchSlots = async (page = 1) => {
-      try {
-        const response = await axios.get(
-          `${API_BASE_URL}/get-slots-args?page=${page}&per_page=6`
-        );
-        setSlots(response.data.slots || []);
-        setTotalSlots(response.data.total);
-        setTotalPages(response.data.pages);
-        setCurrentPage(response.data.current_page);
-      } catch (error) {
-        setError("Failed to load slots");
-      }
-    };
+  const fetchSlots = async (page = 1) => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/get-slots-args?page=${page}&per_page=6`
+      );
+      setSlots(response.data.slots || []);
+      setTotalSlots(response.data.total);
+      setTotalPages(response.data.pages);
+      setCurrentPage(response.data.current_page);
+    } catch (error) {
+      setError("Failed to load slots");
+    }
+  };
 
+  useEffect(() => {
     fetchSlots(currentPage);
-  }, [currentPage,API_BASE_URL]);
+  }, [currentPage, API_BASE_URL]);
 
   const handleAddSlot = async () => {
     if (!newSlot.trim()) {
@@ -45,12 +46,8 @@ const MangeSlots = () => {
       });
 
       if (response.status === 201) {
-        const newSlotData = {
-          id: slots.length + 1,
-          slotNumber: newSlot,
-          isOccupied: false,
-        };
-        setSlots([...slots, newSlotData]);
+        // Refresh the slots data from server instead of adding locally
+        fetchSlots(currentPage);
         setNewSlot("");
         setError("");
       }
@@ -65,7 +62,7 @@ const MangeSlots = () => {
 
   const handleEdit = (slot) => {
     setEditingSlot(slot);
-    setEditedSlotNumber(slot.slotNumber);
+    setEditedSlotNumber(slot.slot_number); // Use slot_number instead of slotNumber
     setEditedOccupiedStatus(slot.status === "occupied");
   };
 
@@ -85,16 +82,7 @@ const MangeSlots = () => {
       );
 
       if (response.status === 200) {
-        const updatedSlots = slots.map((slot) =>
-          slot.id === editingSlot.id
-            ? {
-                ...slot,
-                slotNumber: editedSlotNumber,
-                status: editedOccupiedStatus ? "occupied" : "free",
-              }
-            : slot
-        );
-        setSlots(updatedSlots);
+        fetchSlots(currentPage); // Refresh data from server
         setEditingSlot(null);
         setError("");
       }
@@ -110,8 +98,7 @@ const MangeSlots = () => {
       );
 
       if (response.status === 200) {
-        const filteredSlots = slots.filter((slot) => slot.id !== id);
-        setSlots(filteredSlots);
+        fetchSlots(currentPage); // Refresh data from server
         setError("");
       }
     } catch (error) {
@@ -125,7 +112,7 @@ const MangeSlots = () => {
 
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-semibold mb-4">Manage Parking Slots</h2>
+      <h2 className="text-2xl font-semibold mb-4">Manage Parking Slots </h2>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
         <input
@@ -183,19 +170,19 @@ const MangeSlots = () => {
       )}
 
       <div className="overflow-x-auto">
-        <table className="min-w-full border border-gray-300 rounded-lg shadow-md">
-          <thead>
+        <table className="min-w-full border border-gray-300 rounded-lg shadow-md bg-zinc-950">
+          <thead >
             <tr>
-              <th className="px-6 py-3 text-center text-sm font-medium text-white bg-gray-700">
+              <th className="px-6 py-3 text-center text-sm font-medium text-white bg-gray-900">
                 Index
               </th>
-              <th className="px-6 py-3 text-center text-sm font-medium text-white bg-gray-700">
+              <th className="px-6 py-3 text-center text-sm font-medium text-white bg-gray-900">
                 Slot Number
               </th>
-              <th className="px-6 py-3 text-center text-sm font-medium text-white bg-gray-700">
+              <th className="px-6 py-3 text-center text-sm font-medium text-white bg-gray-900">
                 Status
               </th>
-              <th className="px-6 py-3 text-center text-sm font-medium text-white bg-gray-700">
+              <th className="px-6 py-3 text-center text-sm font-medium text-white bg-gray-900">
                 Actions
               </th>
             </tr>
@@ -203,7 +190,7 @@ const MangeSlots = () => {
           <tbody>
             {Array.isArray(slots) && slots.length > 0 ? (
               slots.map((slot, index) => (
-                <tr key={slot.id} className="border-b">
+                <tr key={slot.id} className="border-b hover:bg-zinc-800">
                   <td className="px-6 py-4 text-sm text-white text-center">{index + 1}</td>
                   <td className="px-6 py-4 text-sm text-white text-center">
                     {slot.slot_number}
@@ -257,21 +244,26 @@ const MangeSlots = () => {
             className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-zinc-600"
             disabled={currentPage === 1}
           >
-            <AiOutlineArrowRight size={20} />
+            <AiOutlineArrowLeft size={20} />
           </button>
         )}
-        <span className="text-lg font-semibold">
-           {currentPage} / {totalPages}
-        </span>
+
         {currentPage < totalPages && (
           <button
             disabled={currentPage === totalPages}
             onClick={() => handlePageChange(currentPage + 1)}
             className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-zinc-600 "
-          >            <AiOutlineArrowLeft size={20} />
+          >
+            <AiOutlineArrowRight size={20} />
           </button>
         )}
+         
       </div>
+      <div className="flex justify-center mt-4">
+        <span className="text-white">
+           {currentPage} / {totalPages}
+        </span>
+        </div>
     </div>
   );
 };

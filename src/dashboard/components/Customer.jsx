@@ -77,8 +77,8 @@ const Customer = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full border border-gray-200 shadow-md rounded-lg">
-          <thead className="border-b ">
+        <table className="min-w-full border border-gray-200 shadow-md rounded-lg bg-zinc-950">
+          <thead className="border-b bg-gray-900">
             <tr>
               <th className="p-3 text-center">index</th>
               <th className="p-3 text-center">Owner Name</th>
@@ -91,7 +91,7 @@ const Customer = () => {
           </thead>
           <tbody>
             {currentDrivers.map((driver, index) => (
-              <tr key={driver.id} className="border-b">
+              <tr key={driver.id} className="border-b hover:bg-zinc-800">
                 <td className="p-3 text-center">{indexOfFirstItem + index + 1}</td>
                 <td className="p-3 text-center">{driver.ownerName}</td>
                 <td className="p-3 text-center ">
@@ -122,23 +122,29 @@ const Customer = () => {
       </div>
 
       <div className="flex justify-center mt-4 space-x-4">
-        <button
-          className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-zinc-600"
-          onClick={handlePrevPage}
-          disabled={currentPage === 1}
-        >
-          <AiOutlineArrowLeft size={20} />
-        </button>
-        <span className="text-lg font-semibold">
-          {currentPage} / {totalPages}
+        {currentPage > 1 && (
+          <button
+            className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-zinc-600"
+            onClick={handlePrevPage}
+          >
+            <AiOutlineArrowLeft size={20} />
+          </button>
+        )}
+
+        {currentPage < totalPages && (
+          <button
+            className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-zinc-600"
+            onClick={handleNextPage}
+          >
+            <AiOutlineArrowRight size={20} />
+          </button>
+        )}
+       
+       <div className="flex justify-center mt-4">
+        <span className="text-white">
+           {currentPage} / {totalPages}
         </span>
-        <button
-          className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-zinc-600"
-          onClick={handleNextPage}
-          disabled={currentPage === totalPages}
-        >
-          <AiOutlineArrowRight size={20} />
-        </button>
+        </div>
       </div>
     </div>
   );

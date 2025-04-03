@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaCar } from "react-icons/fa";
 import axios from "axios";
 import { AiOutlineArrowLeft, AiOutlineArrowRight } from "react-icons/ai";
+import Payment from "./Payment";
 
 const SLOTS_PER_PAGE = 9;
 
@@ -17,28 +18,54 @@ const Slots = () => {
   const [rating, setRating] = useState(1);
   const [feedback, setFeedback] = useState("");
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [paymentDetails, setPaymentDetails] = useState(null);
 
   useEffect(() => {
     const fetchSlots = async () => {
       try {
+        // Fetch all available slots
         const response = await axios.get(`${API_BASE_URL}/get-slots`);
         setSlots(response.data);
-        setTotalPages(Math.ceil(response.data.length / SLOTS_PER_PAGE)); 
+        setTotalPages(Math.ceil(response.data.length / SLOTS_PER_PAGE));
 
         if (user_id) {
+          // Fetch the booked slot for the user
           const bookedSlotResponse = await axios.get(
             `${API_BASE_URL}/get-booked-slot/${user_id}`
           );
           setUserBookedSlot(bookedSlotResponse.data?.slotId || null);
+
+          // If user has a booked slot, fetch the booking details
+          if (bookedSlotResponse.data?.slotId) {
+            const bookingDetailsResponse = await axios.get(
+              `${API_BASE_URL}/get-booking-details/${user_id}`
+            );
+
+            const { entry_time, exit_time, tarif } =
+              bookingDetailsResponse.data;
+
+            // Calculate the payment amount based on entry and exit time, and tarif
+            if (entry_time && exit_time && tarif) {
+              const entryTime = new Date(entry_time);
+              const exitTime = new Date(exit_time);
+              const timeDifference = (exitTime - entryTime) / 1000 / 60 / 60; // in hours
+
+              // Set payment amount dynamically
+              const calculatedAmount = timeDifference * tarif;
+              setPaymentAmount(calculatedAmount); // Dynamically update the payment amount
+            }
+          }
         }
       } catch (error) {
-        console.error("Error fetching slots:", error);
+        console.error("Error fetching data:", error);
       }
     };
 
     fetchSlots();
-  }, [user_id,API_BASE_URL]);
+  }, [user_id, API_BASE_URL]); 
+
 
   const handleBookSlot = async (slotId) => {
     if (slots.status === "occupied") {
@@ -110,47 +137,52 @@ const Slots = () => {
     }
   };
 
-
+ 
   const handleExitSlot = async (slotId) => {
     try {
+      // First, call exit-slot to free up the slot
       await axios.post(`${API_BASE_URL}/exit-slot/${slotId}/${user_id}`);
-      setSlots((prevSlots) =>
-        prevSlots.map((slot) =>
-          slot.id === slotId ? { ...slot, status: "free", driver_id: null } : slot
-        )
+
+      // Then fetch booking details to calculate payment
+      const bookingDetailsResponse = await axios.get(
+        `${API_BASE_URL}/get-booking-details/${user_id}`
       );
-      setUserBookedSlot(null);
-      setShowFeedbackForm(true);
+
+      const { entry_time, exit_time, tarif } = bookingDetailsResponse.data;
+
+      if (entry_time && exit_time && tarif) {
+        const entryTime = new Date(entry_time);
+        const exitTime = new Date(exit_time);
+        const timeDifference = (exitTime - entryTime) / 1000 / 60 / 60; // in hours
+        const calculatedAmount = timeDifference * tarif;
+
+        // Update the slot status locally
+        setSlots((prevSlots) =>
+          prevSlots.map((slot) =>
+            slot.id === slotId
+              ? { ...slot, status: "free", driver_id: null }
+              : slot
+          )
+        );
+        setUserBookedSlot(null);
+
+        // Show payment form with calculated amount
+        setPaymentAmount(calculatedAmount);
+        setShowPayment(true);
+      } else {
+        throw new Error("Missing booking details for payment calculation");
+      }
     } catch (error) {
       console.error("Error exiting slot:", error);
       alert("Failed to exit slot. Please try again.");
     }
   };
 
-  const handleSubmitFeedback = async () => {
-    if (!rating || !feedback) {
-      alert("Please provide a rating and feedback.");
-      return;
-    }
-  
-    try {
-      const response = await axios.post(`${API_BASE_URL}/submit-feedback`, {
-        feedback_by: user_id,
-        feedback_desc: feedback,
-        rate: rating,
-      });
-  
-      alert(response.data.message);
-      setShowFeedbackForm(false);
-      setFeedback("");
-      setRating(1);
-    } catch (error) {
-      console.error("Error submitting feedback:", error);
-      alert("Failed to submit feedback. Please try again.");
-    }
+  const handlePaymentSuccess = (paymentIntent) => {
+    console.log("Payment succeeded:", paymentIntent);
+    setShowPayment(false);
+     
   };
-  
-
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
@@ -171,10 +203,11 @@ const Slots = () => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h2 className="text-2xl font-bold text-center mb-4">Parking Slots</h2>
+      <h2 className="text-2xl font-bold text-center mb-4">Parking Slots </h2>
       {userBookedSlot && (
         <div className="p-4 bg-yellow-500 text-white text-center rounded-lg mb-4">
-          You have successfully booked a slot. You have 30 seconds to unbook the slot (Cancel) and book another.
+          You have successfully booked a slot. You have 30 seconds to unbook the
+          slot (Cancel) and book another.
         </div>
       )}
       <h3 className="text-lg bg-yellow-500 text-white font-semibold text-center mb-4">
@@ -230,55 +263,41 @@ const Slots = () => {
         ))}
       </div>
 
-      {showFeedbackForm && (
+      {showPayment && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl text-black font-semibold mb-4">Rate Your Experience</h2>
-            <label className="block mb-2 text-black">Rating:</label>
-            <input
-              type="number"
-              min="1"
-              max="5"
-              value={rating}
-              onChange={(e) => setRating(e.target.value)}
-              className="border p-2 rounded w-full text-black"
-            />
-            <label className="block mt-4 mb-2 text-black">Feedback:</label>
-            <textarea
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              className="border p-2 rounded w-full text-black text-xl"
-              rows="3"
-            />
-            <div className="mt-4 flex justify-end">
-              <button className="px-4 py-2 bg-green-500 rounded-lg hover:bg-green-400" onClick={handleSubmitFeedback}>
-                Submit
-              </button>
-              <button className="ml-2 px-4 py-2 bg-gray-400 rounded-lg hover:bg-gray-300" onClick={() => setShowFeedbackForm(false)}>
-                Cancel
-              </button>
-            </div>
-          </div>
+          <Payment
+            amount={paymentAmount} // Use the dynamically calculated amount
+            // amount={0.60}
+            onSuccess={handlePaymentSuccess}
+            onClose={() => setShowPayment(false)}
+          />
         </div>
       )}
 
       {/* Pagination Controls */}
       <div className="flex justify-center mt-4 space-x-4">
-        <button
-          className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-zinc-600"
-          onClick={handlePrevPage}
-          disabled={currentPage === 1}
-        >
-          <AiOutlineArrowLeft size={20} />
-        </button>
-        <span className="text-lg font-semibold">{currentPage} / {totalPages}</span>
-        <button
-          className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-zinc-600"
-          onClick={handleNextPage}
-          disabled={currentPage === totalPages}
-        >
-          <AiOutlineArrowRight size={20} /> 
-        </button>
+        {currentPage > 1 && (
+          <button
+            className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-zinc-600"
+            onClick={handlePrevPage}
+          >
+            <AiOutlineArrowLeft size={20} />
+          </button>
+        )}
+
+        {currentPage < totalPages && (
+          <button
+            className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-zinc-600"
+            onClick={handleNextPage}
+          >
+            <AiOutlineArrowRight size={20} />
+          </button>
+        )}
+      </div>
+      <div className="flex justify-center mt-4">
+        <span className="text-white">
+          {currentPage} / {totalPages}
+        </span>
       </div>
     </div>
   );

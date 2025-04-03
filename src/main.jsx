@@ -13,13 +13,15 @@ import Customer from "./dashboard/components/Customer.jsx";
 import Slots from "./dashboard/components/Slots.jsx";
 import MangeSlots from "./dashboard/components/MangeSlots.jsx";
 import BookingHistory from "./dashboard/components/BookingHistory.jsx";
-
+import Payment from "./dashboard/components/Payment.jsx";
+import ReportIssues from "./dashboard/components/ReportIssues.jsx";
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
     <UserProvider>
       <Routes>
         <Route path="/" element={<App />}></Route> 
+        
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route path="settings" element={<Settings />}></Route>
           <Route path="transactions" element={<Transactions />}></Route>
@@ -29,6 +31,8 @@ createRoot(document.getElementById("root")).render(
           <Route path="slots" element={<Slots />} > </Route>
           <Route path="manage-slots" element={<MangeSlots />} > </Route>
           <Route path="booking-history" element={<BookingHistory/>} ></Route>
+          <Route path="payment" element={<Payment />}></Route>
+          <Route path="report-issues" element={<ReportIssues />}></Route>
         </Route> 
         <Route path="/authentificate" element={<Authentification/>}/>
         <Route path="*" element={<Navigate to="/" replace />} />

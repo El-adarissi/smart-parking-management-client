@@ -7,7 +7,7 @@ const BookingHistory = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const storedUserInfos = JSON.parse(localStorage.getItem("userInfos"));
   const user_id = storedUserInfos ? storedUserInfos.user_id : null;
-  const itemsPerPage = 9;
+  const itemsPerPage = 7;
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
@@ -19,7 +19,7 @@ const BookingHistory = () => {
           console.error("Error fetching booking history:", error)
         );
     }
-  }, [user_id,API_BASE_URL]);
+  }, [user_id, API_BASE_URL]);
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -41,7 +41,7 @@ const BookingHistory = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
-    return date.toUTCString().slice(0, 16);
+    return date.toUTCString().slice(16, 26);
   };
 
   const calculateTimePassed = (entryTime, exitTime) => {
@@ -64,9 +64,9 @@ const BookingHistory = () => {
       "Slot Number",
       "Entry Time",
       "Exit Time",
-      "Hours",
-      "Minutes",
-      "Seconds",
+      "hours",
+      "minutes",
+      "seconds"
     ];
 
     const csvRows = [
@@ -121,8 +121,8 @@ const BookingHistory = () => {
       ) : (
         <>
           <div className="overflow-x-auto">
-            <table className="min-w-full border border-gray-200 shadow-md rounded-lg">
-              <thead className="border-b ">
+            <table className="min-w-full border border-gray-200  bg-zinc-950 shadow-md rounded-lg">
+              <thead className="border-b bg-gray-900 ">
                 <tr>
                   <th className="p-3 text-center">Index</th>
                   <th className="p-3 text-center">Owner Name</th>
@@ -130,9 +130,7 @@ const BookingHistory = () => {
                   <th className="p-3 text-center">Slot Number</th>
                   <th className="p-3 text-center">Entry Time</th>
                   <th className="p-3 text-center">Exit Time</th>
-                  <th className="p-3 text-center">Hours</th>
-                  <th className="p-3 text-center">Minutes</th>
-                  <th className="p-3 text-center">Seconds</th>
+                  <th className="p-3 text-center">Time Passed</th>
                 </tr>
               </thead>
               <tbody>
@@ -142,7 +140,7 @@ const BookingHistory = () => {
                     booking.exit_time
                   );
                   return (
-                    <tr key={index} className="border-b">
+                    <tr key={index} className="border-b hover:bg-zinc-800">
                       <td className="p-3 text-center">
                         {indexOfFirstItem + index + 1}
                       </td>
@@ -157,9 +155,7 @@ const BookingHistory = () => {
                       <td className="p-3 text-center">
                         {formatDate(booking.exit_time)}
                       </td>
-                      <td className="p-3 text-center">{hours}</td>
-                      <td className="p-3 text-center">{minutes}</td>
-                      <td className="p-3 text-center">{seconds}</td>
+                      <td className="p-3 text-center">{hours}H:{minutes}M:{seconds}s</td>
                     </tr>
                   );
                 })}
@@ -169,23 +165,27 @@ const BookingHistory = () => {
 
           {/* Pagination Controls */}
           <div className="flex justify-center mt-4 space-x-4">
-            <button
-              className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-zinc-600"
-              onClick={handlePrevPage}
-              disabled={currentPage === 1}
-            >
-              <AiOutlineArrowLeft size={20} />
-            </button>
-            <span className="text-lg font-semibold">
+            {currentPage > 1 && (
+              <button
+                onClick={handlePrevPage}
+                className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-zinc-600"
+              >
+                <AiOutlineArrowLeft size={20} />
+              </button>
+            )}
+            {currentPage < totalPages && (
+              <button
+                onClick={handleNextPage}
+                className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-zinc-600"
+              >
+                <AiOutlineArrowRight size={20} />
+              </button>
+            )}
+          </div>
+          <div className="flex justify-center mt-4">
+            <span className="text-white">
               {currentPage} / {totalPages}
             </span>
-            <button
-              className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-zinc-600"
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-            >
-              <AiOutlineArrowRight size={20} />
-            </button>
           </div>
         </>
       )}
